@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Radar Navideño</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  margin:0;
+  font-family: Arial, sans-serif;
+  background: radial-gradient(circle, #003300, #000);
+  color:#00ff66;
+  text-align:center;
+}
+
+h1 {
+  margin:20px 0 10px;
+  text-shadow: 0 0 12px #00ff66;
+}
+
+/* RADAR */
+#radar {
+  width:300px;
+  height:300px;
+  border:4px solid #00ff66;
+  border-radius:50%;
+  margin:20px auto;
+  position:relative;
+  box-shadow: 0 0 30px #00ff66;
+  overflow:hidden;
+}
+
+/* Anillos */
+.ring {
+  position:absolute;
+  border:1px dashed rgba(0,255,100,0.4);
+  border-radius:50%;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+}
+.ring.small { width:80px; height:80px; }
+.ring.medium { width:160px; height:160px; }
+.ring.large { width:240px; height:240px; }
+
+/* Línea giratoria */
+#line {
+  width:2px;
+  height:150px;
+  background:#00ff66;
+  position:absolute;
+  left:50%;
+  bottom:50%;
+  transform-origin: bottom;
+  animation: spin 2s linear infinite;
+  box-shadow: 0 0 12px #00ff66;
+}
+
+@keyframes spin {
+  from { transform:rotate(0deg); }
+  to { transform:rotate(360deg); }
+}
+
+/* Punto energía */
+#dot {
+  width:14px;
+  height:14px;
+  background:red;
+  border-radius:50%;
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  display:none;
+  box-shadow: 0 0 18px red;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% { transform:translate(-50%,-50%) scale(1); }
+  50% { transform:translate(-50%,-50%) scale(1.4); }
+  100% { transform:translate(-50%,-50%) scale(1); }
+}
+
+#status {
+  font-size:22px;
+  margin:15px;
+}
+
+button {
+  font-size:20px;
+  padding:15px 30px;
+  background:#00ff66;
+  color:#000;
+  border:none;
+  border-radius:14px;
+  box-shadow: 0 0 12px #00ff66;
+}
+</style>
+</head>
+
+<body>
+
+<h1>📡 RADAR NAVIDEÑO</h1>
+
+<div id="radar">
+  <div class="ring small"></div>
+  <div class="ring medium"></div>
+  <div class="ring large"></div>
+  <div id="line"></div>
+  <div id="dot"></div>
+</div>
+
+<p id="status">Pulsa para activar el radar</p>
+<button onclick="startRadar()">ACTIVAR RADAR</button>
+
+<!-- SONIDOS -->
+<audio id="beepSlow" src="beep-slow.mp3" preload="auto"></audio>
+<audio id="beepFast" src="beep-fast.mp3" preload="auto"></audio>
+<audio id="foundSound" src="found.mp3" preload="auto"></audio>
+
+<script>
+/* 🔴 CAMBIA AQUÍ LAS COORDENADAS 🔴 */
+const targets = [
+  { lat: 38.270472, lon: -0.717502 },
+  { lat: 40.000100, lon: -3.000100 },
+  { lat: 40.000200, lon: -3.000200 },
+  { lat: 40.000300, lon: -3.000300 },
+  { lat: 40.000400, lon: -3.000400 },
+  { lat: 40.000500, lon: -3.000500 }
+];
+
+let current = 0;
+let watching = false;
+let lastBeep = 0;
+
+const status = document.getElementById("status");
+const dot = document.getElementById("dot");
+const beepSlow = document.getElementById("beepSlow");
+const beepFast = document.getElementById("beepFast");
+const foundSound = document.getElementById("foundSound");
+
+function distance(lat1, lon1, lat2, lon2) {
+  const R = 6371e3;
+  const φ1 = lat1 * Math.PI / 180;
+  const φ2 = lat2 * Math.PI / 180;
+  const Δφ = (lat2 - lat1) * Math.PI / 180;
+  const Δλ = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(Δφ / 2) ** 2 +
+    Math.cos(φ1) * Math.cos(φ2) *
+    Math.sin(Δλ / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function startRadar() {
+  if (watching) return;
+  watching = true;
+
+  navigator.geolocation.watchPosition(pos => {
+    const d = distance(
+      pos.coords.latitude,
+      pos.coords.longitude,
+      targets[current].lat,
+      targets[current].lon
+    );
+
+    const now = Date.now();
+
+    if (d < 5) {
+      status.innerText = "🎉 ¡ENERGÍA DETECTADA!";
+      dot.style.display = "block";
+      dot.style.background = "gold";
+
+      if (now - lastBeep > 2000) {
+        foundSound.play();
+        lastBeep = now;
+        current = Math.min(current + 1, targets.length - 1);
+      }
+
+    } else if (d < 15) {
+      status.innerText = "🔥 ¡MUY CERCA!";
+      dot.style.display = "block";
+      dot.style.background = "red";
+
+      if (now - lastBeep > 700) {
+        beepFast.play();
+        lastBeep = now;
+      }
+
+    } else if (d < 40) {
+      status.innerText = "🟡 ACERCÁNDOSE";
+      dot.style.display = "none";
+
+      if (now - lastBeep > 1500) {
+        beepSlow.play();
+        lastBeep = now;
+      }
+
+    } else {
+      status.innerText = "🟢 BUSCANDO ENERGÍA";
+      dot.style.display = "none";
+    }
+  });
+}
+</script>
+
+</body>
+</html>
