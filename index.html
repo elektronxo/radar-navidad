@@ -155,6 +155,11 @@ function distance(lat1, lon1, lat2, lon2) {
 }
 
 function startRadar() {
+  beepSlow.play().then(() => {
+    beepSlow.pause();
+    beepSlow.currentTime = 0;
+  });
+
   if (watching) return;
   watching = true;
 
@@ -208,4 +213,5 @@ function startRadar() {
 
 </body>
 </html>
+
 
