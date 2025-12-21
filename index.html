@@ -19,7 +19,6 @@ h1 {
   text-shadow: 0 0 12px #00ff66;
 }
 
-/* RADAR */
 #radar {
   width:300px;
   height:300px;
@@ -44,7 +43,7 @@ h1 {
 .ring.medium { width:160px; height:160px; }
 .ring.large { width:240px; height:240px; }
 
-/* Línea giratoria */
+/* Línea radar */
 #line {
   width:2px;
   height:150px;
@@ -62,7 +61,7 @@ h1 {
   to { transform:rotate(360deg); }
 }
 
-/* Punto energía */
+/* Punto */
 #dot {
   width:14px;
   height:14px;
@@ -81,6 +80,22 @@ h1 {
   0% { transform:translate(-50%,-50%) scale(1); }
   50% { transform:translate(-50%,-50%) scale(1.4); }
   100% { transform:translate(-50%,-50%) scale(1); }
+}
+
+/* Flecha */
+#arrow {
+  position:absolute;
+  width:0;
+  height:0;
+  border-left:14px solid transparent;
+  border-right:14px solid transparent;
+  border-bottom:36px solid #00ff66;
+  top:50%;
+  left:50%;
+  transform-origin: 50% 80%;
+  transform: translate(-50%, -80%) rotate(0deg);
+  filter: drop-shadow(0 0 10px #00ff66);
+  display:none;
 }
 
 #status {
@@ -109,21 +124,22 @@ button {
   <div class="ring medium"></div>
   <div class="ring large"></div>
   <div id="line"></div>
+  <div id="arrow"></div>
   <div id="dot"></div>
 </div>
 
 <p id="status">Pulsa para activar el radar</p>
 <button onclick="startRadar()">ACTIVAR RADAR</button>
 
-<!-- SONIDOS -->
+<!-- Sonidos -->
 <audio id="beepSlow" src="beep-slow.mp3" preload="auto"></audio>
 <audio id="beepFast" src="beep-fast.mp3" preload="auto"></audio>
 <audio id="foundSound" src="found.mp3" preload="auto"></audio>
 
 <script>
-/* 🔴 CAMBIA AQUÍ LAS COORDENADAS 🔴 */
+/* 📍 COORDENADAS DE LAS BOLSAS */
 const targets = [
-  { lat: 38.2298786, lon: -0.8698508 },
+  { lat: 40.000000, lon: -3.000000 },
   { lat: 40.000100, lon: -3.000100 },
   { lat: 40.000200, lon: -3.000200 },
   { lat: 40.000300, lon: -3.000300 },
@@ -134,13 +150,21 @@ const targets = [
 let current = 0;
 let watching = false;
 let lastBeep = 0;
+let deviceHeading = null;
 
 const status = document.getElementById("status");
 const dot = document.getElementById("dot");
+const arrow = document.getElementById("arrow");
 const beepSlow = document.getElementById("beepSlow");
 const beepFast = document.getElementById("beepFast");
 const foundSound = document.getElementById("foundSound");
 
+/* Orientación del móvil */
+window.addEventListener("deviceorientationabsolute", e => {
+  if (e.alpha !== null) deviceHeading = e.alpha;
+});
+
+/* Distancia */
 function distance(lat1, lon1, lat2, lon2) {
   const R = 6371e3;
   const φ1 = lat1 * Math.PI / 180;
@@ -148,20 +172,32 @@ function distance(lat1, lon1, lat2, lon2) {
   const Δφ = (lat2 - lat1) * Math.PI / 180;
   const Δλ = (lon2 - lon1) * Math.PI / 180;
   const a =
-    Math.sin(Δφ / 2) ** 2 +
-    Math.cos(φ1) * Math.cos(φ2) *
-    Math.sin(Δλ / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    Math.sin(Δφ/2)**2 +
+    Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
+/* Dirección */
+function bearing(lat1, lon1, lat2, lon2) {
+  const φ1 = lat1 * Math.PI / 180;
+  const φ2 = lat2 * Math.PI / 180;
+  const Δλ = (lon2 - lon1) * Math.PI / 180;
+  const y = Math.sin(Δλ) * Math.cos(φ2);
+  const x = Math.cos(φ1)*Math.sin(φ2) -
+            Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
+  return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+}
+
+/* Inicio radar */
 function startRadar() {
+  if (watching) return;
+  watching = true;
+
+  /* 🔓 Desbloquea audio */
   beepSlow.play().then(() => {
     beepSlow.pause();
     beepSlow.currentTime = 0;
   });
-
-  if (watching) return;
-  watching = true;
 
   navigator.geolocation.watchPosition(pos => {
     const d = distance(
@@ -171,24 +207,31 @@ function startRadar() {
       targets[current].lon
     );
 
+    if (deviceHeading !== null) {
+      const b = bearing(
+        pos.coords.latitude,
+        pos.coords.longitude,
+        targets[current].lat,
+        targets[current].lon
+      );
+      arrow.style.display = "block";
+      arrow.style.transform =
+        `translate(-50%, -80%) rotate(${b - deviceHeading}deg)`;
+    }
+
     const now = Date.now();
 
-    if (d < 5) {
+    if (d < 6) {
       status.innerText = "🎉 ¡ENERGÍA DETECTADA!";
       dot.style.display = "block";
       dot.style.background = "gold";
-
-      if (now - lastBeep > 2000) {
-        foundSound.play();
-        lastBeep = now;
-        current = Math.min(current + 1, targets.length - 1);
-      }
+      foundSound.play();
+      current = Math.min(current + 1, targets.length - 1);
 
     } else if (d < 15) {
       status.innerText = "🔥 ¡MUY CERCA!";
       dot.style.display = "block";
       dot.style.background = "red";
-
       if (now - lastBeep > 700) {
         beepFast.play();
         lastBeep = now;
@@ -197,7 +240,6 @@ function startRadar() {
     } else if (d < 40) {
       status.innerText = "🟡 ACERCÁNDOSE";
       dot.style.display = "none";
-
       if (now - lastBeep > 1500) {
         beepSlow.play();
         lastBeep = now;
@@ -206,6 +248,7 @@ function startRadar() {
     } else {
       status.innerText = "🟢 BUSCANDO ENERGÍA";
       dot.style.display = "none";
+      arrow.style.display = "none";
     }
   });
 }
@@ -213,6 +256,3 @@ function startRadar() {
 
 </body>
 </html>
-
-
-
