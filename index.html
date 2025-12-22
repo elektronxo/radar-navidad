@@ -138,10 +138,6 @@ button {
 <audio id="beepFast" src="beep-fast.mp3" preload="auto"></audio>
 <audio id="foundSound" src="found.mp3" preload="auto"></audio>
   
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("service-worker.js");
-}
-
 <script>
 /* 📍 COORDENADAS DE LAS BOLSAS */
 const targets = [
@@ -258,10 +254,14 @@ function startRadar() {
     }
   });
 }
+  if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js");
+}
 </script>
 
 </body>
 </html>
+
 
 
 
