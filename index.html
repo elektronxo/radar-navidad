@@ -161,6 +161,8 @@ let watching = false;
 let lastBeep = 0;
 let deviceHeading = null;
 let radarSoundInterval = null;
+let currentDistance = Infinity;
+
 
 const status = document.getElementById("status");
 const dot = document.getElementById("dot");
@@ -206,9 +208,27 @@ function startRadar() {
   
 // 🔄 Sonido sincronizado con cada vuelta del radar
 radarSoundInterval = setInterval(() => {
-  beepSlow.currentTime = 0;
-  beepSlow.play();
+
+  if (currentDistance < 6) return;
+
+  let sound;
+
+  if (currentDistance < 15) {
+    sound = beepFast;
+  } else if (currentDistance < 40) {
+    sound = beepSlow;
+  } else {
+    sound = beepSlow;
+    sound.playbackRate = 0.7;
+  }
+
+  sound.currentTime = 0;
+  sound.play();
+
+  sound.playbackRate = 1;
+
 }, 2000);
+
 
   /* 🔓 Desbloquea audio */
   beepSlow.play().then(() => {
@@ -229,6 +249,7 @@ radarSoundInterval = setInterval(() => {
       targets[current].lat,
       targets[current].lon
     );
+  currentDistance = d;
 
     if (deviceHeading !== null) {
       const b = bearing(
@@ -284,6 +305,7 @@ if ("serviceWorker" in navigator) {
 
 </body>
 </html>
+
 
 
 
