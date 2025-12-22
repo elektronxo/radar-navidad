@@ -160,6 +160,7 @@ let current = 0;
 let watching = false;
 let lastBeep = 0;
 let deviceHeading = null;
+let radarSoundInterval = null;
 
 const status = document.getElementById("status");
 const dot = document.getElementById("dot");
@@ -202,6 +203,12 @@ function bearing(lat1, lon1, lat2, lon2) {
 function startRadar() {
   if (watching) return;
   watching = true;
+  
+// 🔄 Sonido sincronizado con cada vuelta del radar
+radarSoundInterval = setInterval(() => {
+  beepSlow.currentTime = 0;
+  beepSlow.play();
+}, 2000);
 
   /* 🔓 Desbloquea audio */
   beepSlow.play().then(() => {
@@ -277,6 +284,7 @@ if ("serviceWorker" in navigator) {
 
 </body>
 </html>
+
 
 
 
