@@ -1,4 +1,4 @@
-const CACHE_NAME = "radar-navidad-v1";
+const CACHE_NAME = "radar-navidad-v2";
 
 const FILES_TO_CACHE = [
   "./",
@@ -20,3 +20,4 @@ self.addEventListener("fetch", e => {
     caches.match(e.request).then(response => response || fetch(e.request))
   );
 });
+
