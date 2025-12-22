@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#00ff66">
 <meta charset="UTF-8">
 <title>Radar Navideño</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#00ff66">
 
 <style>
 body {
@@ -63,7 +64,7 @@ h1 {
   to { transform:rotate(360deg); }
 }
 
-/* Punto */
+/* Punto objetivo */
 #dot {
   width:14px;
   height:14px;
@@ -105,6 +106,13 @@ h1 {
   margin:15px;
 }
 
+#gpsInfo {
+  font-size:14px;
+  color:#7CFFB2;
+  margin-top:10px;
+  opacity:0.85;
+}
+
 button {
   font-size:20px;
   padding:15px 30px;
@@ -133,20 +141,19 @@ button {
 <p id="status">Pulsa para activar el radar</p>
 <button onclick="startRadar()">ACTIVAR RADAR</button>
 
+<div id="gpsInfo">📍 GPS no iniciado</div>
+
 <!-- Sonidos -->
 <audio id="beepSlow" src="beep-slow.mp3" preload="auto"></audio>
 <audio id="beepFast" src="beep-fast.mp3" preload="auto"></audio>
 <audio id="foundSound" src="found.mp3" preload="auto"></audio>
-  
+
 <script>
 /* 📍 COORDENADAS DE LAS BOLSAS */
 const targets = [
-  { lat: 38.261228, lon: -0.737346 },
+  { lat: 40.000000, lon: -3.000000 },
   { lat: 40.000100, lon: -3.000100 },
-  { lat: 40.000200, lon: -3.000200 },
-  { lat: 40.000300, lon: -3.000300 },
-  { lat: 40.000400, lon: -3.000400 },
-  { lat: 40.000500, lon: -3.000500 }
+  { lat: 40.000200, lon: -3.000200 }
 ];
 
 let current = 0;
@@ -157,6 +164,7 @@ let deviceHeading = null;
 const status = document.getElementById("status");
 const dot = document.getElementById("dot");
 const arrow = document.getElementById("arrow");
+const gpsInfo = document.getElementById("gpsInfo");
 const beepSlow = document.getElementById("beepSlow");
 const beepFast = document.getElementById("beepFast");
 const foundSound = document.getElementById("foundSound");
@@ -166,7 +174,7 @@ window.addEventListener("deviceorientationabsolute", e => {
   if (e.alpha !== null) deviceHeading = e.alpha;
 });
 
-/* Distancia */
+/* Distancia entre dos puntos */
 function distance(lat1, lon1, lat2, lon2) {
   const R = 6371e3;
   const φ1 = lat1 * Math.PI / 180;
@@ -202,6 +210,12 @@ function startRadar() {
   });
 
   navigator.geolocation.watchPosition(pos => {
+
+    gpsInfo.innerHTML =
+      `📍 Lat: ${pos.coords.latitude.toFixed(6)}<br>` +
+      `📍 Lon: ${pos.coords.longitude.toFixed(6)}<br>` +
+      `🎯 Precisión: ±${Math.round(pos.coords.accuracy)} m`;
+
     const d = distance(
       pos.coords.latitude,
       pos.coords.longitude,
@@ -254,15 +268,12 @@ function startRadar() {
     }
   });
 }
-  if ("serviceWorker" in navigator) {
+
+/* Service Worker */
+if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("service-worker.js");
 }
 </script>
 
 </body>
 </html>
-
-
-
-
-
