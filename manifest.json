@@ -1,13 +1,11 @@
 {
   "name": "Radar Navideño",
   "short_name": "Radar 🎄",
-  "description": "Búsqueda mágica de regalos de Papá Noel",
   "start_url": "/radar-navidad/",
   "scope": "/radar-navidad/",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#00ff66",
-  "orientation": "portrait",
   "icons": [
     {
       "src": "/radar-navidad/icon-192.png",
