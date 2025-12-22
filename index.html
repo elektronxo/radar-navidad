@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#00ff66">
 <meta charset="UTF-8">
 <title>Radar Navideño</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -135,6 +137,10 @@ button {
 <audio id="beepSlow" src="beep-slow.mp3" preload="auto"></audio>
 <audio id="beepFast" src="beep-fast.mp3" preload="auto"></audio>
 <audio id="foundSound" src="found.mp3" preload="auto"></audio>
+  
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js");
+}
 
 <script>
 /* 📍 COORDENADAS DE LAS BOLSAS */
@@ -256,5 +262,6 @@ function startRadar() {
 
 </body>
 </html>
+
 
 
